@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile App Feature Matrix: Brick-and-Mortar vs Online Influencers</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .priority-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .priority-high {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .priority-medium {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .priority-low {
+            background-color: #e0e7ff;
+            color: #3730a3;
+        }
+        
+        .priority-none {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .type-common {
+            background-color: #d1fae5;
+            border-left: 4px solid #10b981;
+        }
+        
+        .type-differentiator {
+            background-color: #fed7aa;
+            border-left: 4px solid #f97316;
+        }
+        
+        .type-partial {
+            background-color: #fef3c7;
+            border-left: 4px solid #eab308;
+        }
+        
+        .stat-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-row {
+            transition: all 0.2s;
+        }
+        
+        .feature-row:hover {
+            background-color: #f9fafb;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .filter-chip {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-chip:hover {
+            transform: scale(1.05);
+        }
+        
+        .filter-chip.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .comparison-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .comparison-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .scroll-shadow {
+            position: relative;
+            overflow-x: auto;
+        }
+        
+        .scroll-shadow::before,
+        .scroll-shadow::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 20px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .scroll-shadow::before {
+            left: 0;
+            background: linear-gradient(to right, white, transparent);
+        }
+        
+        .scroll-shadow::after {
+            right: 0;
+            background: linear-gradient(to left, white, transparent);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        // Feature data will be loaded
+        const FEATURE_DATA = [{"User Type": "STAFF - Front Desk", "Feature Category": "Check-In/Check-Out", "Feature Name": "Member Check-In", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have - instant (<2s)", "Brick-and-Mortar Notes": "Self-service kiosks, tablet apps, QR codes", "Online Influencer Notes": "Not applicable", "Key Insights": "Brick-and-mortar specific - gate access control"}, {"User Type": "STAFF - Front Desk", "Feature Category": "Check-In/Check-Out", "Feature Name": "Class Roster Management", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "View class lists, add/remove members on spot", "Online Influencer Notes": "View subscriber lists", "Key Insights": "B&M needs real-time; Online more administrative"}, {"User Type": "STAFF - Front Desk", "Feature Category": "Check-In/Check-Out", "Feature Name": "Waitlist Management", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "LOW", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have - real-time", "Brick-and-Mortar Notes": "Auto-notify when spots open, manual overrides", "Online Influencer Notes": "Rarely needed", "Key Insights": "Critical for capacity-constrained facilities"}, {"User Type": "STAFF - Front Desk", "Feature Category": "Payments/POS", "Feature Name": "In-Person POS", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "NONE", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have - fast checkout", "Brick-and-Mortar Notes": "Sell retail, supplements, day passes, guest fees", "Online Influencer Notes": "N/A", "Key Insights": "Retail is significant revenue for B&M"}, {"User Type": "STAFF - Front Desk", "Feature Category": "Payments/POS", "Feature Name": "Payment Processing", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have - secure", "Brick-and-Mortar Notes": "Process membership payments, handle failed payments", "Online Influencer Notes": "Subscription billing, one-time purchases", "Key Insights": "Both need but different use cases"}, {"User Type": "STAFF - Front Desk", "Feature Category": "Member Management", "Feature Name": "Profile Access", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Fast access (<3s)", "Brick-and-Mortar Notes": "View member info, notes, history, membership status", "Online Influencer Notes": "View subscriber details, engagement metrics", "Key Insights": "Similar needs, different emphasis"}, {"User Type": "STAFF - Front Desk", "Feature Category": "Member Management", "Feature Name": "Quick Registration", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "LOW", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have - fast flow", "Brick-and-Mortar Notes": "Register walk-ins, add to class immediately", "Online Influencer Notes": "Admin task, not time-sensitive", "Key Insights": "B&M needs speed; Online can be async"}, {"User Type": "STAFF - Front Desk", "Feature Category": "Communications", "Feature Name": "On-Spot Messaging", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "LOW", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Quick messages to members in facility", "Online Influencer Notes": "Not priority", "Key Insights": "B&M staff need immediate contact"}, {"User Type": "STAFF - Front Desk", "Feature Category": "Scheduling", "Feature Name": "Staff Schedule View", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "LOW", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have - mobile friendly", "Brick-and-Mortar Notes": "See coaching schedule, class assignments", "Online Influencer Notes": "Limited use", "Key Insights": "Critical for multi-staff facilities"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Workout Delivery", "Feature Name": "View Class Workout", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Must have - quick access", "Brick-and-Mortar Notes": "See WOD, class plan before/during class", "Online Influencer Notes": "Can schedule content in advance", "Key Insights": "B&M needs real-time access at gym"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Workout Delivery", "Feature Name": "Program Workouts", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Create workouts, modify on-the-fly", "Online Influencer Notes": "Core creator activity - build programs", "Key Insights": "Online creators spend more time here"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Workout Delivery", "Feature Name": "Workout Templates", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Pre-built workout libraries", "Online Influencer Notes": "Essential for scaling", "Key Insights": "Critical for online scale"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Performance Tracking", "Feature Name": "Log Results for Members", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "LOW", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have - quick entry", "Brick-and-Mortar Notes": "Enter scores/times during class for members", "Online Influencer Notes": "Members self-log", "Key Insights": "B&M coaches often log for members"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Performance Tracking", "Feature Name": "Leaderboard Management", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important - real-time", "Brick-and-Mortar Notes": "Display on gym TVs, whiteboard view", "Online Influencer Notes": "App-based leaderboards", "Key Insights": "B&M uses for in-gym motivation"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Member Interaction", "Feature Name": "In-App Messaging", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Answer quick questions", "Online Influencer Notes": "Primary communication channel", "Key Insights": "Critical for online coaching"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Member Interaction", "Feature Name": "Voice Notes", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Quick coaching cues", "Online Influencer Notes": "Personal touch at scale", "Key Insights": "Valuable for online creator personality"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Member Interaction", "Feature Name": "Video Feedback", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Review form videos", "Online Influencer Notes": "Core coaching value", "Key Insights": "Online coaches rely on async video review"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Class Management", "Feature Name": "Attendance Taking", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "NONE", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have - one-tap", "Brick-and-Mortar Notes": "Check off attendees during class", "Online Influencer Notes": "N/A", "Key Insights": "B&M specific - needed every class"}, {"User Type": "STAFF - Coaches/Trainers", "Feature Category": "Session Notes", "Feature Name": "Add Workout Notes", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Add coaching notes to sessions", "Online Influencer Notes": "Add motivational content, instructions", "Key Insights": "Both use but different purposes"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Business Operations", "Feature Name": "Billing Management", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have - reliable", "Brick-and-Mortar Notes": "Automated recurring billing, failed payment handling", "Online Influencer Notes": "Subscription management, payment processing", "Key Insights": "Both critical but different scales"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Business Operations", "Feature Name": "Financial Reporting", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Revenue, MRR, retention metrics", "Online Influencer Notes": "Subscription revenue, conversion rates", "Key Insights": "Similar needs, different KPIs"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Business Operations", "Feature Name": "Member Analytics", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Attendance, retention, usage patterns", "Online Influencer Notes": "Engagement, completion rates, churn", "Key Insights": "Both data-driven but different metrics"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Business Operations", "Feature Name": "Staff Management", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "LOW", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Payroll, schedule management, permissions", "Online Influencer Notes": "Limited team - basic permissions", "Key Insights": "B&M has larger staff complexity"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Lead Management", "Feature Name": "CRM Tools", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Lead tracking, trial management, conversions", "Online Influencer Notes": "Funnel tracking, trial conversions", "Key Insights": "Both critical for growth"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Lead Management", "Feature Name": "Automated Workflows", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Trial reminders, check-ins, renewals", "Online Influencer Notes": "Onboarding sequences, engagement campaigns", "Key Insights": "Different automation needs"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Content Management", "Feature Name": "Programming Marketplace", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Purchase third-party programming", "Online Influencer Notes": "Sell programs to other creators", "Key Insights": "Online creates; B&M consumes"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Facility Management", "Feature Name": "Access Control", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "NONE", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Gate/door access, hours management", "Online Influencer Notes": "N/A", "Key Insights": "B&M specific - security requirement"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Facility Management", "Feature Name": "Equipment/Space Mgmt", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "NONE", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Track equipment, space allocation", "Online Influencer Notes": "N/A", "Key Insights": "B&M specific"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Marketing", "Feature Name": "Website Integration", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Embed class schedules, registration", "Online Influencer Notes": "Landing pages, sales pages", "Key Insights": "Both need web presence"}, {"User Type": "STAFF - Managers/Owners", "Feature Category": "Marketing", "Feature Name": "Email/SMS Campaigns", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Member communications, promotions", "Online Influencer Notes": "Content marketing, launches", "Key Insights": "Online relies more heavily"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Onboarding", "Feature Name": "Account Setup", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have - simple", "Brick-and-Mortar Notes": "Quick registration, waiver signing", "Online Influencer Notes": "Sign up, payment setup", "Key Insights": "Both need low friction"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Onboarding", "Feature Name": "Consultation Forms", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Pre-class health questionnaire", "Online Influencer Notes": "Detailed intake forms, goal setting", "Key Insights": "Online needs more detailed intake"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Scheduling", "Feature Name": "Class Booking", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "NONE", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have - instant", "Brick-and-Mortar Notes": "Book classes, see capacity, join waitlist", "Online Influencer Notes": "N/A - asynchronous content", "Key Insights": "B&M critical path; Online N/A"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Scheduling", "Feature Name": "Appointment Booking", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "COMMON", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Book PT sessions, nutrition consults", "Online Influencer Notes": "Book 1:1 calls with creator", "Key Insights": "Both use but different contexts"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Scheduling", "Feature Name": "Calendar Sync", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "LOW", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Add classes to personal calendar", "Online Influencer Notes": "Less critical", "Key Insights": "B&M members want this more"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Workout Experience", "Feature Name": "View Workouts", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "See today's WOD, upcoming workouts", "Online Influencer Notes": "Browse program library, see schedule", "Key Insights": "Both core but different UX"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Workout Experience", "Feature Name": "Exercise Videos", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Must have - HD quality", "Brick-and-Mortar Notes": "Movement demos, technique tips", "Online Influencer Notes": "High-production content, follow-alongs", "Key Insights": "Online needs premium video quality"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Workout Experience", "Feature Name": "Workout Timer", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "COMMON", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Built-in timers for EMOM, Tabata", "Online Influencer Notes": "Timers for intervals", "Key Insights": "Both useful but not critical"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Workout Experience", "Feature Name": "Exercise Substitutions", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Swap movements for injury/equipment", "Online Influencer Notes": "Alternative exercises", "Key Insights": "More critical for at-home training"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Workout Experience", "Feature Name": "Offline Access", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Limited need - in gym", "Online Influencer Notes": "Download workouts for offline", "Key Insights": "Critical for online - gym connectivity issues"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Performance Tracking", "Feature Name": "Log Workouts", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have - easy logging", "Brick-and-Mortar Notes": "Record times, weights, reps", "Online Influencer Notes": "Track all workout data", "Key Insights": "Both core but different emphasis"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Performance Tracking", "Feature Name": "PR Tracking", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Auto-notify PRs, track 1RMs", "Online Influencer Notes": "Progress tracking", "Key Insights": "B&M culture more PR-focused"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Performance Tracking", "Feature Name": "Progress Photos", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Upload check-in photos", "Online Influencer Notes": "Transformation tracking", "Key Insights": "Online culture emphasizes transformations"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Performance Tracking", "Feature Name": "Body Metrics", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Weight, body fat tracking", "Online Influencer Notes": "Detailed metrics tracking", "Key Insights": "Online focuses more on metrics"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Performance Tracking", "Feature Name": "Workout History", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "See past results, compare over time", "Online Influencer Notes": "Full workout history", "Key Insights": "Both critical for progress"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Performance Tracking", "Feature Name": "Leaderboards", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important - real-time", "Brick-and-Mortar Notes": "See class rankings, gym-wide standings", "Online Influencer Notes": "Community leaderboards", "Key Insights": "B&M uses more for live competition"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Social/Community", "Feature Name": "Social Feed", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "See member posts, celebrate PRs", "Online Influencer Notes": "Creator content, community engagement", "Key Insights": "Online relies heavily on social"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Social/Community", "Feature Name": "Comments/Likes", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Encourage fellow members", "Online Influencer Notes": "Engage with creator and community", "Key Insights": "More critical for online connection"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Social/Community", "Feature Name": "Direct Messaging", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Message staff with questions", "Online Influencer Notes": "DM creator for coaching", "Key Insights": "Online primary communication channel"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Social/Community", "Feature Name": "Community Forums", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Optional discussion boards", "Online Influencer Notes": "Community building, support groups", "Key Insights": "Critical for online retention"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Nutrition", "Feature Name": "Meal Tracking", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Optional add-on feature", "Online Influencer Notes": "Often core offering", "Key Insights": "Online packages nutrition coaching"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Nutrition", "Feature Name": "Meal Plans", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Rare in B&M", "Online Influencer Notes": "Recipes, meal prep guides", "Key Insights": "Online creator differentiator"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Nutrition", "Feature Name": "Macro Tracking", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Not common", "Online Influencer Notes": "Calorie and macro logging", "Key Insights": "Online includes nutrition tracking"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Habits/Wellness", "Feature Name": "Habit Tracking", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "HIGH", "Common or Differentiator": "DIFFERENTIATOR", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Sleep, water, steps", "Online Influencer Notes": "Core feature - daily habits", "Key Insights": "Online coaching beyond workouts"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Habits/Wellness", "Feature Name": "Reminders/Notifications", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Important", "Brick-and-Mortar Notes": "Class reminders, billing notices", "Online Influencer Notes": "Workout reminders, check-in prompts", "Key Insights": "Online needs more engagement prompts"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Habits/Wellness", "Feature Name": "Streaks/Badges", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "HIGH", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Attendance streaks", "Online Influencer Notes": "Gamification, motivation", "Key Insights": "Online uses more for retention"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Account Management", "Feature Name": "Profile Management", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Update info, photo, preferences", "Online Influencer Notes": "Manage account details", "Key Insights": "Both need basic functionality"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Account Management", "Feature Name": "Billing Info", "Brick-and-Mortar Priority": "HIGH", "Online Influencer Priority": "HIGH", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Update payment method, view history", "Online Influencer Notes": "Manage subscriptions", "Key Insights": "Both critical for retention"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Account Management", "Feature Name": "Membership Pause/Cancel", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "COMMON", "Performance Expectations": "Must have", "Brick-and-Mortar Notes": "Self-service holds/cancellations", "Online Influencer Notes": "Subscription management", "Key Insights": "Both need but different processes"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Retail/Commerce", "Feature Name": "In-App Purchases", "Brick-and-Mortar Priority": "MEDIUM", "Online Influencer Priority": "LOW", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Buy retail, merchandise", "Online Influencer Notes": "Rare - merch sales", "Key Insights": "B&M has retail revenue"}, {"User Type": "END USER - Members/Subscribers", "Feature Category": "Wearable Integration", "Feature Name": "Fitness Tracker Sync", "Brick-and-Mortar Priority": "LOW", "Online Influencer Priority": "MEDIUM", "Common or Differentiator": "PARTIAL OVERLAP", "Performance Expectations": "Nice to have", "Brick-and-Mortar Notes": "Limited use in B&M", "Online Influencer Notes": "Apple Health, Fitbit, etc.", "Key Insights": "Online uses for accountability"}];
+
+        function App() {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [selectedUserType, setSelectedUserType] = useState('all');
+            const [selectedPriority, setSelectedPriority] = useState('all');
+            const [selectedType, setSelectedType] = useState('all');
+            const [view, setView] = useState('table'); // table, comparison, dashboard
+            const [expandedFeature, setExpandedFeature] = useState(null);
+
+            // Calculate statistics
+            const stats = useMemo(() => {
+                const total = FEATURE_DATA.length;
+                const common = FEATURE_DATA.filter(f => f['Common or Differentiator'] === 'COMMON').length;
+                const differentiators = FEATURE_DATA.filter(f => f['Common or Differentiator'] === 'DIFFERENTIATOR').length;
+                const partial = FEATURE_DATA.filter(f => f['Common or Differentiator'] === 'PARTIAL OVERLAP').length;
+                const bAndMHigh = FEATURE_DATA.filter(f => f['Brick-and-Mortar Priority'] === 'HIGH').length;
+                const onlineHigh = FEATURE_DATA.filter(f => f['Online Influencer Priority'] === 'HIGH').length;
+                const bAndMUnique = FEATURE_DATA.filter(f => 
+                    ['HIGH', 'MEDIUM'].includes(f['Brick-and-Mortar Priority']) && 
+                    f['Online Influencer Priority'] === 'NONE'
+                ).length;
+                const onlineUnique = FEATURE_DATA.filter(f => 
+                    ['HIGH', 'MEDIUM'].includes(f['Online Influencer Priority']) && 
+                    f['Brick-and-Mortar Priority'] === 'NONE'
+                ).length;
+
+                return {
+                    total,
+                    common,
+                    differentiators,
+                    partial,
+                    bAndMHigh,
+                    onlineHigh,
+                    bAndMUnique,
+                    onlineUnique
+                };
+            }, []);
+
+            // Filter features
+            const filteredFeatures = useMemo(() => {
+                return FEATURE_DATA.filter(feature => {
+                    const matchesSearch = !searchTerm || 
+                        feature['Feature Name'].toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        feature['Feature Category'].toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        feature['Key Insights'].toLowerCase().includes(searchTerm.toLowerCase());
+                    
+                    const matchesUserType = selectedUserType === 'all' || 
+                        feature['User Type'].includes(selectedUserType);
+                    
+                    const matchesPriority = selectedPriority === 'all' ||
+                        feature['Brick-and-Mortar Priority'] === selectedPriority ||
+                        feature['Online Influencer Priority'] === selectedPriority;
+                    
+                    const matchesType = selectedType === 'all' ||
+                        feature['Common or Differentiator'] === selectedType;
+                    
+                    return matchesSearch && matchesUserType && matchesPriority && matchesType;
+                });
+            }, [searchTerm, selectedUserType, selectedPriority, selectedType]);
+
+            const userTypes = ['all', 'STAFF - Front Desk', 'STAFF - Coaches/Trainers', 'STAFF - Managers/Owners', 'END USER - Members/Subscribers'];
+            const priorities = ['all', 'HIGH', 'MEDIUM', 'LOW', 'NONE'];
+            const types = ['all', 'COMMON', 'DIFFERENTIATOR', 'PARTIAL OVERLAP'];
+
+            const getPriorityClass = (priority) => {
+                const classes = {
+                    'HIGH': 'priority-high',
+                    'MEDIUM': 'priority-medium',
+                    'LOW': 'priority-low',
+                    'NONE': 'priority-none'
+                };
+                return `priority-badge ${classes[priority] || ''}`;
+            };
+
+            const getTypeClass = (type) => {
+                const classes = {
+                    'COMMON': 'type-common',
+                    'DIFFERENTIATOR': 'type-differentiator',
+                    'PARTIAL OVERLAP': 'type-partial'
+                };
+                return classes[type] || '';
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+                    {/* Header */}
+                    <header className="bg-white shadow-sm border-b border-gray-200">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-gray-900">
+                                        Mobile App Feature Matrix
+                                    </h1>
+                                    <p className="mt-1 text-sm text-gray-600">
+                                        Brick-and-Mortar Gyms vs. Online Fitness Influencers
+                                    </p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setView('dashboard')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                            view === 'dashboard'
+                                                ? 'bg-blue-600 text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        Dashboard
+                                    </button>
+                                    <button
+                                        onClick={() => setView('comparison')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                            view === 'comparison'
+                                                ? 'bg-blue-600 text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        Comparison
+                                    </button>
+                                    <button
+                                        onClick={() => setView('table')}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                            view === 'table'
+                                                ? 'bg-blue-600 text-white shadow-md'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        Full Table
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* Dashboard View */}
+                    {view === 'dashboard' && (
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                            {/* Stats Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                                <div className="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+                                    <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                                        Total Features
+                                    </div>
+                                    <div className="mt-2 text-4xl font-bold text-gray-900">{stats.total}</div>
+                                    <div className="mt-2 text-sm text-gray-500">Analyzed across both segments</div>
+                                </div>
+                                
+                                <div className="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+                                    <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                                        Common Features
+                                    </div>
+                                    <div className="mt-2 text-4xl font-bold text-gray-900">{stats.common}</div>
+                                    <div className="mt-2 text-sm text-gray-500">
+                                        {Math.round((stats.common / stats.total) * 100)}% of total
+                                    </div>
+                                </div>
+                                
+                                <div className="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-orange-500">
+                                    <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                                        Differentiators
+                                    </div>
+                                    <div className="mt-2 text-4xl font-bold text-gray-900">{stats.differentiators}</div>
+                                    <div className="mt-2 text-sm text-gray-500">
+                                        {Math.round((stats.differentiators / stats.total) * 100)}% of total
+                                    </div>
+                                </div>
+                                
+                                <div className="stat-card bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+                                    <div className="text-sm font-medium text-gray-600 uppercase tracking-wide">
+                                        Partial Overlap
+                                    </div>
+                                    <div className="mt-2 text-4xl font-bold text-gray-900">{stats.partial}</div>
+                                    <div className="mt-2 text-sm text-gray-500">
+                                        {Math.round((stats.partial / stats.total) * 100)}% of total
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Comparison Stats */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                <div className="bg-white rounded-xl shadow-md p-6">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                                        Brick-and-Mortar Gyms
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-700">High Priority Features</span>
+                                            <span className="text-2xl font-bold text-blue-600">{stats.bAndMHigh}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-700">Unique Features</span>
+                                            <span className="text-2xl font-bold text-orange-600">{stats.bAndMUnique}</span>
+                                        </div>
+                                        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                                            <div className="text-sm font-medium text-blue-900 mb-2">Key Focus Areas:</div>
+                                            <ul className="text-sm text-blue-800 space-y-1">
+                                                <li>• Check-in/Access Control</li>
+                                                <li>• In-Person POS & Retail</li>
+                                                <li>• Staff Management</li>
+                                                <li>• Real-time Performance Tracking</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-xl shadow-md p-6">
+                                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                                        Online Fitness Influencers
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-700">High Priority Features</span>
+                                            <span className="text-2xl font-bold text-purple-600">{stats.onlineHigh}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-gray-700">Unique Features</span>
+                                            <span className="text-2xl font-bold text-orange-600">{stats.onlineUnique}</span>
+                                        </div>
+                                        <div className="mt-4 p-4 bg-purple-50 rounded-lg">
+                                            <div className="text-sm font-medium text-purple-900 mb-2">Key Focus Areas:</div>
+                                            <ul className="text-sm text-purple-800 space-y-1">
+                                                <li>• HD Video Content Delivery</li>
+                                                <li>• Community & Social Features</li>
+                                                <li>• Creator-Subscriber Messaging</li>
+                                                <li>• Nutrition & Habit Tracking</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Key Insight Box */}
+                            <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-xl p-8 shadow-lg">
+                                <div className="flex items-start">
+                                    <div className="flex-shrink-0">
+                                        <svg className="h-8 w-8 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div className="ml-4">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                                            Strategic Recommendation: Build TWO Separate Apps
+                                        </h3>
+                                        <p className="text-gray-700 leading-relaxed">
+                                            Only <strong>30% of features are truly "common"</strong> between brick-and-mortar gyms and online influencers. 
+                                            Even these shared features require dramatically different implementations. The remaining <strong>70% either don't overlap or have conflicting requirements</strong> 
+                                            (speed-first vs. offline-first, retail POS vs. content delivery, facility management vs. community forums). 
+                                            Building one unified app would compromise the user experience for both segments.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Comparison View */}
+                    {view === 'comparison' && (
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                            <div className="comparison-section">
+                                {/* B&M Column */}
+                                <div className="bg-white rounded-xl shadow-lg p-6">
+                                    <h2 className="text-2xl font-bold text-blue-900 mb-6 flex items-center">
+                                        <span className="w-3 h-3 bg-blue-600 rounded-full mr-3"></span>
+                                        Brick-and-Mortar Gyms
+                                    </h2>
+                                    
+                                    <div className="space-y-6">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">
+                                                Critical Features (HIGH Priority)
+                                            </h3>
+                                            <div className="space-y-2">
+                                                {FEATURE_DATA
+                                                    .filter(f => f['Brick-and-Mortar Priority'] === 'HIGH')
+                                                    .slice(0, 8)
+                                                    .map((feature, idx) => (
+                                                        <div key={idx} className="p-3 bg-blue-50 rounded-lg text-sm">
+                                                            <div className="font-semibold text-blue-900">{feature['Feature Name']}</div>
+                                                            <div className="text-blue-700 text-xs mt-1">{feature['Brick-and-Mortar Notes']}</div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">
+                                                Unique to B&M (Online: NONE)
+                                            </h3>
+                                            <div className="space-y-2">
+                                                {FEATURE_DATA
+                                                    .filter(f => f['Online Influencer Priority'] === 'NONE' && 
+                                                                ['HIGH', 'MEDIUM'].includes(f['Brick-and-Mortar Priority']))
+                                                    .map((feature, idx) => (
+                                                        <div key={idx} className="p-3 bg-orange-50 rounded-lg text-sm border-l-4 border-orange-400">
+                                                            <div className="font-semibold text-orange-900">{feature['Feature Name']}</div>
+                                                            <div className="text-orange-700 text-xs mt-1">{feature['Key Insights']}</div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Online Column */}
+                                <div className="bg-white rounded-xl shadow-lg p-6">
+                                    <h2 className="text-2xl font-bold text-purple-900 mb-6 flex items-center">
+                                        <span className="w-3 h-3 bg-purple-600 rounded-full mr-3"></span>
+                                        Online Fitness Influencers
+                                    </h2>
+                                    
+                                    <div className="space-y-6">
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">
+                                                Critical Features (HIGH Priority)
+                                            </h3>
+                                            <div className="space-y-2">
+                                                {FEATURE_DATA
+                                                    .filter(f => f['Online Influencer Priority'] === 'HIGH')
+                                                    .slice(0, 8)
+                                                    .map((feature, idx) => (
+                                                        <div key={idx} className="p-3 bg-purple-50 rounded-lg text-sm">
+                                                            <div className="font-semibold text-purple-900">{feature['Feature Name']}</div>
+                                                            <div className="text-purple-700 text-xs mt-1">{feature['Online Influencer Notes']}</div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <h3 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3">
+                                                Unique to Online (B&M: NONE)
+                                            </h3>
+                                            <div className="space-y-2">
+                                                {FEATURE_DATA
+                                                    .filter(f => f['Brick-and-Mortar Priority'] === 'NONE' && 
+                                                                ['HIGH', 'MEDIUM'].includes(f['Online Influencer Priority']))
+                                                    .map((feature, idx) => (
+                                                        <div key={idx} className="p-3 bg-orange-50 rounded-lg text-sm border-l-4 border-orange-400">
+                                                            <div className="font-semibold text-orange-900">{feature['Feature Name']}</div>
+                                                            <div className="text-orange-700 text-xs mt-1">{feature['Key Insights']}</div>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Table View */}
+                    {view === 'table' && (
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                            {/* Filters */}
+                            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                                <div className="space-y-4">
+                                    {/* Search */}
+                                    <div>
+                                        <input
+                                            type="text"
+                                            placeholder="Search features, categories, or insights..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    {/* Filter Chips */}
+                                    <div className="flex flex-wrap gap-4">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-2">User Type</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {userTypes.map(type => (
+                                                    <button
+                                                        key={type}
+                                                        onClick={() => setSelectedUserType(type)}
+                                                        className={`filter-chip px-3 py-1 rounded-full text-sm border-2 ${
+                                                            selectedUserType === type ? 'active' : 'border-gray-300 text-gray-700'
+                                                        }`}
+                                                    >
+                                                        {type === 'all' ? 'All' : type.split(' - ')[1] || type}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-2">Priority</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {priorities.map(priority => (
+                                                    <button
+                                                        key={priority}
+                                                        onClick={() => setSelectedPriority(priority)}
+                                                        className={`filter-chip px-3 py-1 rounded-full text-sm border-2 ${
+                                                            selectedPriority === priority ? 'active' : 'border-gray-300 text-gray-700'
+                                                        }`}
+                                                    >
+                                                        {priority === 'all' ? 'All' : priority}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-2">Type</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {types.map(type => (
+                                                    <button
+                                                        key={type}
+                                                        onClick={() => setSelectedType(type)}
+                                                        className={`filter-chip px-3 py-1 rounded-full text-sm border-2 ${
+                                                            selectedType === type ? 'active' : 'border-gray-300 text-gray-700'
+                                                        }`}
+                                                    >
+                                                        {type === 'all' ? 'All' : type.replace('PARTIAL OVERLAP', 'Partial')}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="text-sm text-gray-600">
+                                        Showing {filteredFeatures.length} of {FEATURE_DATA.length} features
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Feature Cards */}
+                            <div className="space-y-4">
+                                {filteredFeatures.map((feature, index) => (
+                                    <div 
+                                        key={index}
+                                        className={`feature-row bg-white rounded-xl shadow-md p-6 ${getTypeClass(feature['Common or Differentiator'])}`}
+                                    >
+                                        <div className="flex items-start justify-between mb-4">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <h3 className="text-lg font-bold text-gray-900">
+                                                        {feature['Feature Name']}
+                                                    </h3>
+                                                    <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                                                        {feature['Feature Category']}
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-gray-600 mb-1">
+                                                    {feature['User Type']}
+                                                </div>
+                                                <div className="text-sm font-medium text-gray-700">
+                                                    {feature['Key Insights']}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* B&M Column */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-semibold text-gray-700">Brick-and-Mortar</span>
+                                                    <span className={getPriorityClass(feature['Brick-and-Mortar Priority'])}>
+                                                        {feature['Brick-and-Mortar Priority']}
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg">
+                                                    {feature['Brick-and-Mortar Notes']}
+                                                </div>
+                                            </div>
+
+                                            {/* Online Column */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-sm font-semibold text-gray-700">Online Influencer</span>
+                                                    <span className={getPriorityClass(feature['Online Influencer Priority'])}>
+                                                        {feature['Online Influencer Priority']}
+                                                    </span>
+                                                </div>
+                                                <div className="text-sm text-gray-600 p-3 bg-gray-50 rounded-lg">
+                                                    {feature['Online Influencer Notes']}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 pt-4 border-t border-gray-200">
+                                            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                                                Performance Expectations
+                                            </div>
+                                            <div className="text-sm text-gray-700">
+                                                {feature['Performance Expectations']}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {filteredFeatures.length === 0 && (
+                                <div className="bg-white rounded-xl shadow-md p-12 text-center">
+                                    <div className="text-gray-400 mb-4">
+                                        <svg className="mx-auto h-16 w-16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900 mb-2">No features found</h3>
+                                    <p className="text-gray-500">Try adjusting your filters or search term</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Footer */}
+                    <footer className="mt-12 bg-white border-t border-gray-200">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                            <div className="text-center text-sm text-gray-600">
+                                <p className="mb-2">
+                                    <strong>Research Sources:</strong> Playbook, Trainerize, Everfit, PushPress, Wodify, TrainHeroic, FITTR
+                                </p>
+                                <p>
+                                    Created for Daxko Product Strategy • {new Date().toLocaleDateString()}
+                                </p>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
